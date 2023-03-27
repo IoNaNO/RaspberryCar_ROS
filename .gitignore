@@ -1,0 +1,57 @@
+# .gitignore for ROS projects
+
+# Build and install directories
+/build
+/install
+/devel
+/log
+
+# Cache files
+*.pyc
+*.pyo
+*.pyd
+*.bak
+*.swp
+*.swo
+*~
+.__*
+
+# Compiled C++ files
+*.o
+*.a
+*.so
+*.lib
+*.dll
+*.dylib
+*.exe
+
+# Ignore Eclipse project files
+.project
+.cproject
+.settings
+
+# Ignore QtCreator project files
+*.autosave
+*.config
+*.creator
+*.creator.user
+*.files
+*.includes
+*.pro.user
+*.qmlproject
+*.qmlproject.user
+*.qmake.cache
+*.qmake.stash
+
+# Ignore Visual Studio Code files
+.vscode
+
+# Ignore catkin_tools
+.catkin_tools
+
+# Ignore generated documentation
+/doc
+
+# Ignore custom packages installed in the workspace
+/src/*/node_modules
+/src/*/dist
