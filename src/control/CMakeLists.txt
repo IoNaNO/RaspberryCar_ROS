@@ -11,6 +11,8 @@ find_package(catkin REQUIRED COMPONENTS
   roscpp
   rospy
   std_msgs
+  message_generation
+  serial
 )
 
 ## System dependencies are found with CMake's conventions
@@ -72,6 +74,8 @@ find_package(catkin REQUIRED COMPONENTS
 #   DEPENDENCIES
 #   std_msgs
 # )
+add_message_files(FILES Serialmsg.msg)
+generate_messages(DEPENDENCIES std_msgs)
 
 ################################################
 ## Declare ROS dynamic reconfigure parameters ##
@@ -107,6 +111,8 @@ catkin_package(
 #  LIBRARIES control
 #  CATKIN_DEPENDS roscpp rospy std_msgs
 #  DEPENDS system_lib
+CATKIN_DEPENDS roscpp rospy std_msgs serial
+message_runtime
 )
 
 ###########
@@ -118,6 +124,11 @@ catkin_package(
 include_directories(
 # include
   ${catkin_INCLUDE_DIRS}
+)
+
+add_executable(serial_node serial_node.cpp)
+target_link_libraries(serial_node
+${catkin_LIBRARIES}
 )
 
 ## Declare a C++ library
@@ -204,3 +215,4 @@ include_directories(
 
 ## Add folders to be run by python nosetests
 # catkin_add_nosetests(test)
+
