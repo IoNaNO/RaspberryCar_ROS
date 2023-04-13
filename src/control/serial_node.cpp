@@ -14,7 +14,10 @@ int main(int argc,char** argv){
 
     try{
         ser.setPort("/dev/ttyACM0");
-        ser.setBaudrate(9600);
+        ser.setBaudrate(115200);
+        ser.setParity(serial::parity_none);
+        ser.setBytesize(serial::eightbits);
+        ser.setStopbits(serial::stopbits_one);
         serial::Timeout tout=serial::Timeout::simpleTimeout(1000);
         ser.setTimeout(tout);
         ser.open();
@@ -33,17 +36,20 @@ int main(int argc,char** argv){
     }
 
     char t='G';
-    std::string test="Hello";
+    std::string test="Hello morn";
     while(ros::ok()){
         control::Serialmsg send_msg;
         send_msg.type=1;
         send_msg.data=100;
         ser_pub.publish(send_msg);
         // ser.write(test);
-        ser.write((uint8_t*)&t,1);
-        ROS_INFO_STREAM("MESSAGE SEND:"<<t);
+        ser.write(test);
+        ROS_INFO_STREAM("MESSAGE SEND:"<<test);
         ros::spinOnce();
         loop_rate.sleep();
     }
+
+    ser.close();
+    return 0;
 }
 
