@@ -6,8 +6,8 @@
 int main(int argc,char** argv){
     ros::init(argc,argv,"serial_node");
 
-    ros::NodeHandle n;
-    ros::Publisher ser_pub=n.advertise<control::Serialmsg>("/contro_info",1000);
+    ros::NodeHandle nh;
+    ros::Publisher ser_pub=nh.advertise<control::Serialmsg>("/contro_info",1000);
 
     ros::Rate loop_rate(10);
     serial::Serial ser;
@@ -35,16 +35,21 @@ int main(int argc,char** argv){
         return -1;
     }
 
-    char t='G';
-    std::string test="Hello morn";
+    std::string test="Hello ROS\n";
     while(ros::ok()){
         control::Serialmsg send_msg;
-        send_msg.type=1;
-        send_msg.data=100;
+        send_msg.type=send_msg.empty;
+        send_msg.type=send_msg.velocity;
+        send_msg.data=64;
         ser_pub.publish(send_msg);
-        // ser.write(test);
-        ser.write(test);
-        ROS_INFO_STREAM("MESSAGE SEND:"<<test);
+
+        std::vector<uint8_t> buffer;
+        buffer.push_back(send_msg.type);
+        buffer.push_back(send_msg.data);
+        
+        ser.write(buffer);
+
+        ROS_INFO_STREAM("Sending Type: "<<(unsigned int)send_msg.type<<", Data: "<<(unsigned int)send_msg.data);
         ros::spinOnce();
         loop_rate.sleep();
     }
