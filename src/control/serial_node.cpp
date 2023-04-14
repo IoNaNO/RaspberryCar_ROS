@@ -3,14 +3,25 @@
 #include<string>
 #include "control/Serialmsg.h"
 
+    
+serial::Serial ser;
+void controlCallback(const control::Serialmsg::ConstPtr& msg){
+    std::vector<uint8_t> buffer;
+    buffer.push_back(msg->type);
+    buffer.push_back(msg->data);
+        
+    ser.write(buffer);
+
+    ROS_INFO("Serial port: %u,Data: %u",msg->type,msg->data);
+}
+
 int main(int argc,char** argv){
     ros::init(argc,argv,"serial_node");
 
     ros::NodeHandle nh;
-    ros::Publisher ser_pub=nh.advertise<control::Serialmsg>("/contro_info",1000);
+    ros::Subscriber sub=nh.subscribe("/control_info",10,controlCallback);
 
     ros::Rate loop_rate(10);
-    serial::Serial ser;
 
     try{
         ser.setPort("/dev/ttyACM0");
@@ -35,24 +46,21 @@ int main(int argc,char** argv){
         return -1;
     }
 
-    std::string test="Hello ROS\n";
-    while(ros::ok()){
-        control::Serialmsg send_msg;
-        send_msg.type=send_msg.empty;
-        send_msg.type=send_msg.velocity;
-        send_msg.data=64;
-        ser_pub.publish(send_msg);
+    // std::string test="Hello ROS\n";
+    // while(ros::ok()){
+    //     control::Serialmsg send_msg;
+    //     send_msg.type=send_msg.empty;
+    //     send_msg.type=send_msg.velocity;
+    //     send_msg.data=64;
+    //     ser_pub.publish(send_msg);
 
-        std::vector<uint8_t> buffer;
-        buffer.push_back(send_msg.type);
-        buffer.push_back(send_msg.data);
-        
-        ser.write(buffer);
 
-        ROS_INFO_STREAM("Sending Type: "<<(unsigned int)send_msg.type<<", Data: "<<(unsigned int)send_msg.data);
-        ros::spinOnce();
-        loop_rate.sleep();
-    }
+    //     ROS_INFO_STREAM("Sending Type: "<<(unsigned int)send_msg.type<<", Data: "<<(unsigned int)send_msg.data);
+    //     ros::spinOnce();
+    //     loop_rate.sleep();
+    // }
+
+    ros::spin();
 
     ser.close();
     return 0;

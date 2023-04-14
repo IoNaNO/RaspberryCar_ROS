@@ -73,7 +73,10 @@ include_directories(
 )
 
 add_executable(serial_node serial_node.cpp)
+add_executable(remote_node remote_node.cpp)
 target_link_libraries(serial_node
 ${catkin_LIBRARIES}
 )
-
+target_link_libraries(remote_node
+${catkin_LIBRARIES}
+)

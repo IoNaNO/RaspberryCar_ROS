@@ -18,15 +18,17 @@
 #define KEYCODE_T 0x74
 #define KEYCODE_V 0x76
 
-int getch(){
-    termios oldt,newt;
+int getch()
+{
+    struct termios oldt, newt;
     int ch;
-    tcgetattr(STDIN_FILENO,&oldt);
-    newt=oldt;
-    newt.c_lflag&=-(ICANON|ECHO);
-    tcsetattr(STDIN_FILENO,TCSANOW,&newt);
-    ch=getchar();
-    tcsetattr(STDIN_FILENO,TCSANOW,&oldt);
+    tcgetattr(STDIN_FILENO, &oldt);
+    newt = oldt;
+    newt.c_lflag &= ~(ICANON | ECHO);
+    tcsetattr(STDIN_FILENO, TCSANOW, &newt);
+    ch = getchar();
+    tcsetattr(STDIN_FILENO, TCSANOW, &oldt);
+    //ROS_INFO("Read From Keyboard: %d",ch);
     return ch;
 }
 
@@ -63,14 +65,21 @@ int main(int argc,char** argv){
         else if(key==KEYCODE_RIGHT){
             angle++;
             msg.type=msg.angle;
-            msg.data=speed;
+            msg.data=angle;
             update=true;            
         }
         else if(key==KEYCODE_LEFT){
             angle--;
             msg.type=msg.angle;
-            msg.data=speed;
+            msg.data=angle;
             update=true;
         }
+
+        if(update){
+            pub.publish(msg);
+            ROS_INFO("Sending Type: %u,Data: %d",msg.type,msg.data);
+        }
     }
+    
+    return 0;
 }
