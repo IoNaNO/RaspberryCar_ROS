@@ -3,10 +3,11 @@
 #include<string>
 #include "control/Serialmsg.h"
 
-    
+uint8_t st=0xAF;
 serial::Serial ser;
 void controlCallback(const control::Serialmsg::ConstPtr& msg){
     std::vector<uint8_t> buffer;
+    buffer.push_back(st);
     buffer.push_back(msg->type);
     buffer.push_back(msg->data);
         
@@ -45,20 +46,6 @@ int main(int argc,char** argv){
     {
         return -1;
     }
-
-    // std::string test="Hello ROS\n";
-    // while(ros::ok()){
-    //     control::Serialmsg send_msg;
-    //     send_msg.type=send_msg.empty;
-    //     send_msg.type=send_msg.velocity;
-    //     send_msg.data=64;
-    //     ser_pub.publish(send_msg);
-
-
-    //     ROS_INFO_STREAM("Sending Type: "<<(unsigned int)send_msg.type<<", Data: "<<(unsigned int)send_msg.data);
-    //     ros::spinOnce();
-    //     loop_rate.sleep();
-    // }
 
     ros::spin();
 
