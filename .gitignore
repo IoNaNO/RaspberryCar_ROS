@@ -5,6 +5,7 @@
 /install
 /devel
 /log
+/logs
 
 # Cache files
 *.pyc
