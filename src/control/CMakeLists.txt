@@ -13,6 +13,8 @@ find_package(catkin REQUIRED COMPONENTS
   std_msgs
   message_generation
   serial
+  sensor_msgs
+  cv_bridge
 )
 
 ## Generate added messages and services with any dependencies listed here
@@ -57,7 +59,7 @@ catkin_package(
 #  LIBRARIES control
 #  CATKIN_DEPENDS roscpp rospy std_msgs
 #  DEPENDS system_lib
-CATKIN_DEPENDS roscpp rospy std_msgs serial
+CATKIN_DEPENDS roscpp rospy std_msgs serial sensor_msgs cv_bridge
 message_runtime
 )
 
@@ -74,9 +76,13 @@ include_directories(
 
 add_executable(serial_node serial_node.cpp)
 add_executable(remote_node remote_node.cpp)
+add_executable(control_node control_node.cpp)
 target_link_libraries(serial_node
 ${catkin_LIBRARIES}
 )
 target_link_libraries(remote_node
+${catkin_LIBRARIES}
+)
+target_link_libraries(control_node
 ${catkin_LIBRARIES}
 )

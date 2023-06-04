@@ -59,6 +59,8 @@
   <exec_depend>rospy</exec_depend>
   <exec_depend>std_msgs</exec_depend>
   <build_depend>serial</build_depend>
+  <depend>sensor_msgs</depend>
+  <depend>cv_bridge</depend>
   <!-- msg dependencies -->
   <build_depend>message_generation</build_depend>
   <exec_depend>message_runtime</exec_depend>

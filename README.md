@@ -12,6 +12,14 @@ sudo route add default gw 192.168.239.199
 - HOST
 ```bash
 export ROS_MASTER_URI=http://192.168.239.80:11311
-export ROS_IP=192.168.239.201
 export ROS_IP=192.168.239.80
+export ROS_IP=192.168.239.201
+```
+- BUILD
+```bash
+catkin build
+```
+- MONITOR
+```bash
+rosrun rqt_image_view rqt_image_view
 ```
