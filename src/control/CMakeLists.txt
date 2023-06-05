@@ -59,8 +59,7 @@ catkin_package(
 #  LIBRARIES control
 #  CATKIN_DEPENDS roscpp rospy std_msgs
 #  DEPENDS system_lib
-CATKIN_DEPENDS roscpp rospy std_msgs serial sensor_msgs cv_bridge
-message_runtime
+CATKIN_DEPENDS roscpp rospy std_msgs serial sensor_msgs cv_bridge message_runtime
 )
 
 ###########

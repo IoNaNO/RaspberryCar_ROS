@@ -1,6 +1,6 @@
-int32 type
-int32 data
+uint8 type
+int8 data
 
-int32 empty=0
-int32 velocity=1
-int32 angle=2
+uint8 empty=0
+uint8 velocity=1
+uint8 angle=2

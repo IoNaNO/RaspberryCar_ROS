@@ -11,6 +11,7 @@ import os
 import sys
 from rostopic import get_topic_type
 
+from std_msgs.msg import String
 from sensor_msgs.msg import Image, CompressedImage
 from detection_msgs.msg import BoundingBox, BoundingBoxes
 
@@ -88,8 +89,11 @@ class Yolov5Detector:
             )
 
         # Initialize prediction publisher
+        # self.pred_pub = rospy.Publisher(
+        #     rospy.get_param("~output_topic"), BoundingBoxes, queue_size=10
+        # )
         self.pred_pub = rospy.Publisher(
-            rospy.get_param("~output_topic"), BoundingBoxes, queue_size=10
+            rospy.get_param("~output_topic"), String, queue_size=10
         )
         # Initialize image publisher
         self.publish_image = rospy.get_param("~publish_image")
@@ -134,6 +138,8 @@ class Yolov5Detector:
         bounding_boxes = BoundingBoxes()
         bounding_boxes.header = data.header
         bounding_boxes.image_header = data.header
+
+        det_list = ""
         
         annotator = Annotator(im0, line_width=self.line_thickness, example=str(self.names))
         if len(det):
@@ -152,6 +158,8 @@ class Yolov5Detector:
                 bounding_box.xmax = int(xyxy[2])
                 bounding_box.ymax = int(xyxy[3])
 
+                det_list += self.names[c] + "\n"
+
                 bounding_boxes.bounding_boxes.append(bounding_box)
 
                 # Annotate the image
@@ -167,7 +175,8 @@ class Yolov5Detector:
             im0 = annotator.result()
 
         # Publish prediction
-        self.pred_pub.publish(bounding_boxes)
+        # self.pred_pub.publish(bounding_boxes)
+        self.pred_pub.publish(det_list)
 
         # Publish & visualize images
         if self.view_image:

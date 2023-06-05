@@ -5,15 +5,25 @@
 
 uint8_t st=0xAF;
 serial::Serial ser;
+
+inline void putintoBuff(std::vector<uint8_t>& buf,int32_t value){
+    buf.push_back((value >> 24) & 0xFF);
+    buf.push_back((value >> 16) & 0xFF);
+    buf.push_back((value >> 8) & 0xFF);
+    buf.push_back(value & 0xFF);
+}
+
 void controlCallback(const control::Serialmsg::ConstPtr& msg){
     std::vector<uint8_t> buffer;
+    // putintoBuff(buffer,st);
+    // putintoBuff(buffer,msg->type);
+    // putintoBuff(buffer,msg->data);    
     buffer.push_back(st);
     buffer.push_back(msg->type);
     buffer.push_back(msg->data);
-        
     ser.write(buffer);
 
-    ROS_INFO("Serial port: %u,Data: %u",msg->type,msg->data);
+    ROS_INFO("Serial port: %u,Data: %d",msg->type,msg->data);
 }
 
 int main(int argc,char** argv){
@@ -47,7 +57,10 @@ int main(int argc,char** argv){
         return -1;
     }
 
-    ros::spin();
+    while(ros::ok()){
+        ros::spinOnce();
+        loop_rate.sleep();
+    }
 
     ser.close();
     return 0;

@@ -4,13 +4,25 @@
 #include<opencv2/highgui.hpp>
 #include"control/Serialmsg.h"
 
-int speed=120;
+template <typename T>
+T clamp(T val, T min, T max) {
+    if (val < min) {
+        return min;
+    } else if (val > max) {
+        return max;
+    } else {
+        return val;
+    }
+}
+
+int speed=60;
 int distance=0;
 ros::Subscriber sub;
 ros::Publisher pub;
 control::Serialmsg sendmsg;
 
 const int th=30;
+const int init_speed=60;
 
 bool isedge(const cv::Mat& m,int x,int y,bool dir){
     if(dir==true){
@@ -82,14 +94,27 @@ void callback(const sensor_msgs::Image::ConstPtr& msg){
         }
     }
     if(l&&r){
-        d=(l+r-image.cols)/2;
-        ROS_INFO("Get the track distance:%d",d);
-        if(d!=distance){
-            distance=d;
-            sendmsg.type=control::Serialmsg::angle;
-            sendmsg.data=distance;
-            pub.publish(sendmsg);
-        }
+        distance=(l+r-image.cols)/2;
+        ROS_INFO("Get the track distance:%d",distance);
+        // if(d!=distance){
+        //     distance=d;
+        //     sendmsg.type=control::Serialmsg::angle;
+        //     sendmsg.data=distance;
+        //     pub.publish(sendmsg);
+        // }
+        // speed=init_speed;
+        // sendmsg.type=control::Serialmsg::velocity;
+        // sendmsg.data=speed;
+        // pub.publish(sendmsg);
+        sendmsg.type=control::Serialmsg::angle;
+        sendmsg.data=clamp(distance, static_cast<int32_t>(std::numeric_limits<int8_t>::min()), static_cast<int32_t>(std::numeric_limits<int8_t>::max()));
+        pub.publish(sendmsg);
+    }
+    else{
+        speed=0;
+        sendmsg.type=control::Serialmsg::velocity;
+        sendmsg.data=clamp(distance, static_cast<int32_t>(std::numeric_limits<int8_t>::min()), static_cast<int32_t>(std::numeric_limits<int8_t>::max()));;
+        pub.publish(sendmsg);
     }
 
 }
@@ -99,8 +124,12 @@ int main(int argc,char **argv){
     ros::NodeHandle nh;
     pub=nh.advertise<control::Serialmsg>("/control_info",1);
     sub=nh.subscribe("/raspi_cam/image_bin",10,callback);
+    ros::Rate loop_rate(10);
 
-    ros::spin();
+    while(ros::ok()){
+        ros::spinOnce();
+        loop_rate.sleep();
+    }
 
     return 0;
 }
