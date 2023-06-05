@@ -56,3 +56,6 @@
 # Ignore custom packages installed in the workspace
 /src/*/node_modules
 /src/*/dist
+
+# Ignore rosbag file
+*.bag

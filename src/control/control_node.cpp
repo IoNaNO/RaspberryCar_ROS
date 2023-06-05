@@ -3,6 +3,7 @@
 #include<cv_bridge/cv_bridge.h>
 #include<opencv2/highgui.hpp>
 #include"control/Serialmsg.h"
+#include"detection_msgs/FeaturePoint.h"
 
 template <typename T>
 T clamp(T val, T min, T max) {
@@ -19,10 +20,16 @@ int speed=60;
 int distance=0;
 ros::Subscriber sub;
 ros::Publisher pub;
+ros::Subscriber detect_sub;
 control::Serialmsg sendmsg;
 
 const int th=30;
 const int init_speed=60;
+
+const int wid_t=50;
+const int hig_t=300;
+const int cnt_t=3;
+int cnt=0;
 
 bool isedge(const cv::Mat& m,int x,int y,bool dir){
     if(dir==true){
@@ -61,7 +68,11 @@ bool isedge(const cv::Mat& m,int x,int y,bool dir){
     }
 }
 
-void callback(const sensor_msgs::Image::ConstPtr& msg){
+bool isregion(const int x,const int y){
+    return y>=hig_t&&x>=320-wid_t&&x<=320+wid_t;
+}
+
+void imgCallback(const sensor_msgs::Image::ConstPtr& msg){
     cv::Mat image;
     try{
         image=cv_bridge::toCvShare(msg,"mono8")->image;
@@ -70,7 +81,6 @@ void callback(const sensor_msgs::Image::ConstPtr& msg){
         ROS_ERROR("%s",e.what());
         return;
     }
-    int d=0;
     //ROS_INFO("pixel:%d",image.at<uchar>(image.rows/2,image.cols/2));
     int l=0,r=0;
     for(int i=0;i<image.rows;i++){
@@ -95,7 +105,7 @@ void callback(const sensor_msgs::Image::ConstPtr& msg){
     }
     if(l&&r){
         distance=(l+r-image.cols)/2;
-        ROS_INFO("Get the track distance:%d",distance);
+        // ROS_INFO("Get the track distance:%d",distance);
         // if(d!=distance){
         //     distance=d;
         //     sendmsg.type=control::Serialmsg::angle;
@@ -119,11 +129,26 @@ void callback(const sensor_msgs::Image::ConstPtr& msg){
 
 }
 
+void detectCallback(const detection_msgs::FeaturePoint::ConstPtr& msg){
+    ROS_INFO("Get detection point type:%d x:%d y:%d",msg->Class,msg->x,msg->y);
+    if(msg->Class!=msg->none){
+        if(isregion(msg->x,msg->y)){
+            cnt++;
+        }
+        if(cnt>=cnt_t){
+            sendmsg.type=sendmsg.detect;
+            sendmsg.data=msg->Class;
+            pub.publish(sendmsg);
+        }
+    }
+}
+
 int main(int argc,char **argv){
     ros::init(argc,argv,"control_node");
     ros::NodeHandle nh;
     pub=nh.advertise<control::Serialmsg>("/control_info",1);
-    sub=nh.subscribe("/raspi_cam/image_bin",10,callback);
+    sub=nh.subscribe("/raspi_cam/image_bin",10,imgCallback);
+    detect_sub=nh.subscribe("/yolov5/detections",10,detectCallback);
     ros::Rate loop_rate(10);
 
     while(ros::ok()){

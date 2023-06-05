@@ -11,9 +11,8 @@ import os
 import sys
 from rostopic import get_topic_type
 
-from std_msgs.msg import String
 from sensor_msgs.msg import Image, CompressedImage
-from detection_msgs.msg import BoundingBox, BoundingBoxes
+from detection_msgs.msg import BoundingBox, BoundingBoxes, FeaturePoint
 
 
 # add yolov5 submodule to path
@@ -93,7 +92,7 @@ class Yolov5Detector:
         #     rospy.get_param("~output_topic"), BoundingBoxes, queue_size=10
         # )
         self.pred_pub = rospy.Publisher(
-            rospy.get_param("~output_topic"), String, queue_size=10
+            rospy.get_param("~output_topic"), FeaturePoint, queue_size=1
         )
         # Initialize image publisher
         self.publish_image = rospy.get_param("~publish_image")
@@ -135,11 +134,14 @@ class Yolov5Detector:
         # Process predictions 
         det = pred[0].cpu().numpy()
 
+        feature_point = FeaturePoint()
+        feature_point.Class = 0
+        feature_point.x = 0
+        feature_point.y = 0
+
         bounding_boxes = BoundingBoxes()
         bounding_boxes.header = data.header
         bounding_boxes.image_header = data.header
-
-        det_list = ""
         
         annotator = Annotator(im0, line_width=self.line_thickness, example=str(self.names))
         if len(det):
@@ -158,7 +160,14 @@ class Yolov5Detector:
                 bounding_box.xmax = int(xyxy[2])
                 bounding_box.ymax = int(xyxy[3])
 
-                det_list += self.names[c] + "\n"
+                if bounding_box.Class == "person" or bounding_box.Class == "car":
+                    if bounding_box.Class == "person":
+                        feature_point.Class = 1
+                    else:
+                        feature_point.Class = 2
+                    if feature_point.y < bounding_box.ymax:
+                        feature_point.x = int(bounding_box.xmin * 0.5 + bounding_box.xmax * 0.5)
+                        feature_point.y = bounding_box.ymax
 
                 bounding_boxes.bounding_boxes.append(bounding_box)
 
@@ -176,7 +185,7 @@ class Yolov5Detector:
 
         # Publish prediction
         # self.pred_pub.publish(bounding_boxes)
-        self.pred_pub.publish(det_list)
+        self.pred_pub.publish(feature_point)
 
         # Publish & visualize images
         if self.view_image:

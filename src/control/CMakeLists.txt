@@ -15,6 +15,7 @@ find_package(catkin REQUIRED COMPONENTS
   serial
   sensor_msgs
   cv_bridge
+  detection_msgs
 )
 
 ## Generate added messages and services with any dependencies listed here
@@ -82,6 +83,6 @@ ${catkin_LIBRARIES}
 target_link_libraries(remote_node
 ${catkin_LIBRARIES}
 )
-target_link_libraries(control_node
+target_link_libraries(control_node 
 ${catkin_LIBRARIES}
 )
