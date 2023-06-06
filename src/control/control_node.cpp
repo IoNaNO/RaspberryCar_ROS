@@ -22,14 +22,16 @@ ros::Subscriber sub;
 ros::Publisher pub;
 ros::Subscriber detect_sub;
 control::Serialmsg sendmsg;
+control::Serialmsg stopflag;
 
 const int th=30;
 const int init_speed=60;
 
 const int wid_t=50;
-const int hig_t=300;
-const int cnt_t=3;
+const int hig_t=200;
+const int cnt_t=2;
 int cnt=0;
+int cnt_stall=0;
 
 bool isedge(const cv::Mat& m,int x,int y,bool dir){
     if(dir==true){
@@ -126,7 +128,9 @@ void imgCallback(const sensor_msgs::Image::ConstPtr& msg){
         sendmsg.data=clamp(distance, static_cast<int32_t>(std::numeric_limits<int8_t>::min()), static_cast<int32_t>(std::numeric_limits<int8_t>::max()));;
         pub.publish(sendmsg);
     }
-
+    if(cnt>=cnt_t){
+        pub.publish(stopflag);
+    }
 }
 
 void detectCallback(const detection_msgs::FeaturePoint::ConstPtr& msg){
@@ -136,9 +140,16 @@ void detectCallback(const detection_msgs::FeaturePoint::ConstPtr& msg){
             cnt++;
         }
         if(cnt>=cnt_t){
-            sendmsg.type=sendmsg.detect;
-            sendmsg.data=msg->Class;
-            pub.publish(sendmsg);
+            stopflag.type=sendmsg.detect;
+            stopflag.data=msg->Class;
+            pub.publish(stopflag);
+        }
+        cnt_stall=0;
+    }
+    else{
+        cnt_stall++;
+        if(cnt_stall>=cnt_t){
+            cnt=0;
         }
     }
 }
