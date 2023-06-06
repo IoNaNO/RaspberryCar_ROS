@@ -1,6 +1,6 @@
 <launch>
     <include file="$(find perception)/camera.launch"/>
-    <include file="$(find yolov5_ros)/launch/yolov5.launch"/>
+    <!-- <include file="$(find yolov5_ros)/launch/yolov5.launch"/> -->
     <node pkg="perception" type="process.py" name="image_process" output="screen"/>
     <node pkg="control" type="control_node" name="control_node" output="screen"/>
     <node pkg="control" type="serial_node" name="serial_node" output="screen"/>

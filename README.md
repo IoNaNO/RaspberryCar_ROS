@@ -13,7 +13,9 @@ sudo route add default gw 192.168.239.199
 ```bash
 export ROS_MASTER_URI=http://192.168.239.80:11311
 export ROS_IP=192.168.239.80
-export ROS_IP=192.168.239.201
+
+export ROS_MASTER_URI=http://192.168.239.80:11311
+export ROS_IP=172.23.211.4
 ```
 - BUILD
 ```bash
