@@ -21,6 +21,8 @@
 #define KEYCODE_SPACE 0x20
 
 control::Serialmsg stopflag;
+control::Serialmsg detourflag;
+control::Serialmsg noneflag;
 
 int getch()
 {
@@ -44,16 +46,26 @@ int main(int argc,char** argv){
     stopflag.type=control::Serialmsg::detect;
     stopflag.data=detection_msgs::FeaturePoint::person;
 
+    detourflag.type=control::Serialmsg::detect;
+    detourflag.data=detection_msgs::FeaturePoint::car;
+
+    noneflag.type=control::Serialmsg::detect;
+    noneflag.data=detection_msgs::FeaturePoint::none;
+
+    ros::Rate loop_rate(10);
+
     control::Serialmsg msg;
     int speed=0;
     int angle=0;
-    bool stop=false;
+    int stop=0;
+    int detour=0;
+    int clear=0;
 
     ROS_INFO("Use arrow keys to control the vehicle. Press 'q' to quit.");
 
     while(ros::ok()){
-        int key=0x20;
-        if(!stop){
+        int key=0;
+        if(!stop&&!detour){
             key=getch();
         }
         bool update=false;
@@ -86,7 +98,13 @@ int main(int argc,char** argv){
             update=true;
         }
         else if(key==KEYCODE_SPACE){
-            stop=true;
+            stop=10;
+        }
+        else if(key==KEYCODE_C){
+            detour=10;
+        }
+        else if(key==KEYCODE_B){
+            clear=10;
         }
 
         if(update){
@@ -94,9 +112,21 @@ int main(int argc,char** argv){
             ROS_INFO("Sending Type: %u,Data: %d",msg.type,msg.data);
         }
         if(stop){
+            stop--;
             pub.publish(stopflag);
             ROS_INFO("Sending Stop!");
         }
+        else if(detour){
+            detour--;
+            pub.publish(detourflag);
+            ROS_INFO("Sending Detour!");
+        }
+        else if(clear){
+            clear--;
+            pub.publish(noneflag);
+            ROS_INFO("Sending Clear!");
+        }
+        loop_rate.sleep();
     }
     
     return 0;
