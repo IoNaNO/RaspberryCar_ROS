@@ -20,9 +20,9 @@
 #define KEYCODE_V 0x76
 #define KEYCODE_SPACE 0x20
 
-control::Serialmsg stopflag;
-control::Serialmsg detourflag;
-control::Serialmsg noneflag;
+detection_msgs::FeaturePoint personsignal;
+detection_msgs::FeaturePoint carsignal;
+detection_msgs::FeaturePoint nonesignal;
 
 int getch()
 {
@@ -42,17 +42,21 @@ int main(int argc,char** argv){
     ros::init(argc,argv,"remote_node");
     ros::NodeHandle nh;
     ros::Publisher pub=nh.advertise<control::Serialmsg>("/control_info",1);
+    ros::Publisher yolo_mock=nh.advertise<detection_msgs::FeaturePoint>("/yolov5/detections",1);
 
-    stopflag.type=control::Serialmsg::detect;
-    stopflag.data=detection_msgs::FeaturePoint::person;
+    personsignal.Class=detection_msgs::FeaturePoint::person;
+    personsignal.x=320;
+    personsignal.y=300;
 
-    detourflag.type=control::Serialmsg::detect;
-    detourflag.data=detection_msgs::FeaturePoint::car;
+    carsignal.Class=detection_msgs::FeaturePoint::car;
+    carsignal.x=320;
+    carsignal.y=300;
 
-    noneflag.type=control::Serialmsg::detect;
-    noneflag.data=detection_msgs::FeaturePoint::none;
+    nonesignal.Class=detection_msgs::FeaturePoint::none;
+    nonesignal.x=0;
+    nonesignal.y=0;
 
-    ros::Rate loop_rate(10);
+    ros::Rate loop_rate(30);
 
     control::Serialmsg msg;
     int speed=0;
@@ -65,7 +69,7 @@ int main(int argc,char** argv){
 
     while(ros::ok()){
         int key=0;
-        if(!stop&&!detour){
+        if(!stop&&!detour&&!clear){
             key=getch();
         }
         bool update=false;
@@ -113,17 +117,17 @@ int main(int argc,char** argv){
         }
         if(stop){
             stop--;
-            pub.publish(stopflag);
+            yolo_mock.publish(personsignal);
             ROS_INFO("Sending Stop!");
         }
         else if(detour){
             detour--;
-            pub.publish(detourflag);
+            yolo_mock.publish(carsignal);
             ROS_INFO("Sending Detour!");
         }
         else if(clear){
             clear--;
-            pub.publish(noneflag);
+            yolo_mock.publish(nonesignal);
             ROS_INFO("Sending Clear!");
         }
         loop_rate.sleep();

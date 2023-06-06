@@ -22,7 +22,6 @@ ros::Subscriber sub;
 ros::Publisher pub;
 ros::Subscriber detect_sub;
 control::Serialmsg sendmsg;
-control::Serialmsg stopflag;
 
 const int th=30;
 const int init_speed=60;
@@ -32,6 +31,11 @@ const int hig_t=200;
 const int cnt_t=2;
 int cnt=0;
 int cnt_stall=0;
+
+bool trackmission=true;
+control::Serialmsg stopflag;
+control::Serialmsg detourflag;
+control::Serialmsg noneflag;
 
 bool isedge(const cv::Mat& m,int x,int y,bool dir){
     if(dir==true){
@@ -75,61 +79,60 @@ bool isregion(const int x,const int y){
 }
 
 void imgCallback(const sensor_msgs::Image::ConstPtr& msg){
-    cv::Mat image;
-    try{
-        image=cv_bridge::toCvShare(msg,"mono8")->image;
-    }
-    catch(cv_bridge::Exception& e){
-        ROS_ERROR("%s",e.what());
-        return;
-    }
-    //ROS_INFO("pixel:%d",image.at<uchar>(image.rows/2,image.cols/2));
-    int l=0,r=0;
-    for(int i=0;i<image.rows;i++){
-        l=0;
-        r=0;
-        for(int j=0;j<image.cols;j++){
-            if(isedge(image,j,i,true)){
-                l=j;
+    if(trackmission){
+        cv::Mat image;
+        try{
+            image=cv_bridge::toCvShare(msg,"mono8")->image;
+        }
+        catch(cv_bridge::Exception& e){
+            ROS_ERROR("%s",e.what());
+            return;
+        }
+        //ROS_INFO("pixel:%d",image.at<uchar>(image.rows/2,image.cols/2));
+        int l=0,r=0;
+        for(int i=0;i<image.rows;i++){
+            l=0;
+            r=0;
+            for(int j=0;j<image.cols;j++){
+                if(isedge(image,j,i,true)){
+                    l=j;
+                    break;
+                }
+            }
+            for(int j=image.cols-1;j>=0;j--){
+                if(isedge(image,j,i,false)){
+                    r=j;
+                    break;
+                }
+            }
+            //ROS_INFO("(l:%d,r:%d)",l,r);
+            if(l&&r){
                 break;
             }
         }
-        for(int j=image.cols-1;j>=0;j--){
-            if(isedge(image,j,i,false)){
-                r=j;
-                break;
-            }
-        }
-        //ROS_INFO("(l:%d,r:%d)",l,r);
         if(l&&r){
-            break;
+            distance=(l+r-image.cols)/2;
+            // ROS_INFO("Get the track distance:%d",distance);
+            // if(d!=distance){
+            //     distance=d;
+            //     sendmsg.type=control::Serialmsg::angle;
+            //     sendmsg.data=distance;
+            //     pub.publish(sendmsg);
+            // }
+            // speed=init_speed;
+            // sendmsg.type=control::Serialmsg::velocity;
+            // sendmsg.data=speed;
+            // pub.publish(sendmsg);
+            sendmsg.type=control::Serialmsg::angle;
+            sendmsg.data=clamp(distance, static_cast<int32_t>(std::numeric_limits<int8_t>::min()), static_cast<int32_t>(std::numeric_limits<int8_t>::max()));
+            pub.publish(sendmsg);
         }
-    }
-    if(l&&r){
-        distance=(l+r-image.cols)/2;
-        // ROS_INFO("Get the track distance:%d",distance);
-        // if(d!=distance){
-        //     distance=d;
-        //     sendmsg.type=control::Serialmsg::angle;
-        //     sendmsg.data=distance;
-        //     pub.publish(sendmsg);
-        // }
-        // speed=init_speed;
-        // sendmsg.type=control::Serialmsg::velocity;
-        // sendmsg.data=speed;
-        // pub.publish(sendmsg);
-        sendmsg.type=control::Serialmsg::angle;
-        sendmsg.data=clamp(distance, static_cast<int32_t>(std::numeric_limits<int8_t>::min()), static_cast<int32_t>(std::numeric_limits<int8_t>::max()));
-        pub.publish(sendmsg);
-    }
-    else{
-        speed=0;
-        sendmsg.type=control::Serialmsg::velocity;
-        sendmsg.data=clamp(distance, static_cast<int32_t>(std::numeric_limits<int8_t>::min()), static_cast<int32_t>(std::numeric_limits<int8_t>::max()));;
-        pub.publish(sendmsg);
-    }
-    if(cnt>=cnt_t){
-        pub.publish(stopflag);
+        else{
+            speed=0;
+            sendmsg.type=control::Serialmsg::velocity;
+            sendmsg.data=clamp(distance, static_cast<int32_t>(std::numeric_limits<int8_t>::min()), static_cast<int32_t>(std::numeric_limits<int8_t>::max()));;
+            pub.publish(sendmsg);
+        }
     }
 }
 
@@ -140,9 +143,13 @@ void detectCallback(const detection_msgs::FeaturePoint::ConstPtr& msg){
             cnt++;
         }
         if(cnt>=cnt_t){
-            stopflag.type=sendmsg.detect;
-            stopflag.data=msg->Class;
-            pub.publish(stopflag);
+            if(msg->Class==msg->person){
+                pub.publish(stopflag);
+            }
+            else if(msg->Class==msg->car){
+                pub.publish(detourflag);
+            }
+            // trackmission=false;
         }
         cnt_stall=0;
     }
@@ -150,6 +157,8 @@ void detectCallback(const detection_msgs::FeaturePoint::ConstPtr& msg){
         cnt_stall++;
         if(cnt_stall>=cnt_t){
             cnt=0;
+            trackmission=true;
+            pub.publish(noneflag);
         }
     }
 }
@@ -161,6 +170,15 @@ int main(int argc,char **argv){
     sub=nh.subscribe("/raspi_cam/image_bin",10,imgCallback);
     detect_sub=nh.subscribe("/yolov5/detections",10,detectCallback);
     ros::Rate loop_rate(10);
+
+    stopflag.type=control::Serialmsg::detect;
+    stopflag.data=detection_msgs::FeaturePoint::person;
+
+    detourflag.type=control::Serialmsg::detect;
+    detourflag.data=detection_msgs::FeaturePoint::car;
+
+    noneflag.type=control::Serialmsg::detect;
+    noneflag.data=detection_msgs::FeaturePoint::none;
 
     while(ros::ok()){
         ros::spinOnce();
